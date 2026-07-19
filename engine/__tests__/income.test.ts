@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { calcIncomeSchedule } from "../income"
+import { calcIncomeSchedule, calcRaisePhaseSchedule } from "../income"
 
 describe("calcIncomeSchedule", () => {
   it("year 1 equals baseIncome exactly", () => {
@@ -29,5 +29,30 @@ describe("calcIncomeSchedule", () => {
     for (const income of schedule) {
       expect(income).toBe(350)
     }
+  })
+})
+
+describe("calcRaisePhaseSchedule (multiple raise phases)", () => {
+  it("stacks raise phases and matches the sample husband income", () => {
+    const s = calcRaisePhaseSchedule(
+      {
+        baseIncome: 640,
+        raisePhases: [
+          { annualRaise: 30, untilYear: 8 },
+          { annualRaise: 10, untilYear: 20 },
+        ],
+      },
+      25,
+    )
+    expect(s[0]).toBe(640) // e1
+    expect(s[7]).toBe(850) // e8 (昇給①終了)
+    expect(s[8]).toBe(860) // e9 (昇給②開始)
+    expect(s[19]).toBe(970) // e20 (上限到達)
+    expect(s[24]).toBe(970) // 以降は上限維持
+  })
+
+  it("handles no phases (flat income)", () => {
+    const s = calcRaisePhaseSchedule({ baseIncome: 500, raisePhases: [] }, 3)
+    expect(s).toEqual([500, 500, 500])
   })
 })

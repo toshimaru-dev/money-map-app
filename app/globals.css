@@ -2,26 +2,106 @@
 @import "@heroui/styles";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* === MoneyMap "Warm Journey" design tokens (design/design.md) === */
+
+  /* Primary */
+  --brand-orange: #f97316;
+  --brand-coral: #fb7185;
+  --brand-amber: #fbbf24;
+  --brand-green: #22c55e;
+  --brand-blue: #60a5fa;
+
+  /* Background */
+  --mm-cream: #fff8f1;
+  --mm-warm-white: #fffcfa;
+  --mm-sand: #f6e9da;
+  --mm-soft-orange: #fff1e6;
+
+  /* Text */
+  --mm-ink: #3b2f2f;
+  --mm-ink-secondary: #6b5b52;
+  --mm-ink-caption: #9a8c82;
+
+  /* Gradients */
+  --mm-gradient-primary: linear-gradient(135deg, #f97316, #fdba74);
+  --mm-gradient-success: linear-gradient(135deg, #22c55e, #86efac);
+  --mm-gradient-danger: linear-gradient(135deg, #fb7185, #f87171);
+
+  /* Shadows */
+  --mm-shadow-soft: 0 12px 40px rgba(249, 115, 22, 0.08);
+  --mm-shadow-hover: 0 18px 60px rgba(249, 115, 22, 0.12);
+
+  --background: var(--mm-cream);
+  --foreground: var(--mm-ink);
+
+  /* --- HeroUI theme variable overrides --- */
+  --surface: var(--mm-warm-white);
+  --surface-foreground: var(--mm-ink);
+  --surface-secondary: var(--mm-soft-orange);
+  --surface-tertiary: var(--mm-sand);
+
+  --muted: var(--mm-ink-caption);
+
+  --default: var(--mm-soft-orange);
+  --default-foreground: var(--mm-ink);
+
+  --accent: var(--brand-orange);
+  --accent-foreground: #ffffff;
+
+  --field-background: #ffffff;
+  --field-foreground: var(--mm-ink);
+  --field-placeholder: var(--mm-ink-caption);
+  --field-border: var(--mm-sand);
+
+  --success: var(--brand-green);
+  --success-foreground: #ffffff;
+
+  --warning: var(--brand-amber);
+  --warning-foreground: var(--mm-ink);
+
+  --danger: var(--brand-coral);
+  --danger-foreground: #ffffff;
+
+  --border: var(--mm-sand);
+  --separator: var(--mm-sand);
+  --focus: var(--brand-orange);
+
+  --surface-shadow: var(--mm-shadow-soft);
+  --field-shadow: 0 1px 2px 0 rgba(59, 47, 47, 0.04);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-noto-sans-jp), var(--font-inter), sans-serif;
+  --font-number: var(--font-inter), sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-coral: var(--brand-coral);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-green: var(--brand-green);
+  --color-brand-blue: var(--brand-blue);
+
+  --color-mm-cream: var(--mm-cream);
+  --color-mm-warm-white: var(--mm-warm-white);
+  --color-mm-sand: var(--mm-sand);
+  --color-mm-soft-orange: var(--mm-soft-orange);
+
+  --color-mm-ink: var(--mm-ink);
+  --color-mm-ink-secondary: var(--mm-ink-secondary);
+  --color-mm-ink-caption: var(--mm-ink-caption);
+
+  --shadow-mm-soft: var(--mm-shadow-soft);
+  --shadow-mm-hover: var(--mm-shadow-hover);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums-number {
+  font-family: var(--font-number);
 }

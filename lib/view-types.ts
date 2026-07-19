@@ -1,0 +1,10 @@
+export type ViewKey =
+  | "home"
+  | "input"
+  | "plan"
+  | "cashflow"
+  | "assets"
+  | "goals"
+  | "report"
+  | "simulation"
+  | "settings"
