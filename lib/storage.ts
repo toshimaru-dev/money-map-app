@@ -1,8 +1,8 @@
 import type { LifePlanInput } from "../engine/types"
 
-// v9: 将来プラン(不定期支出)を廃止し、ライフイベントに統合。
+// v10: 住宅ローン維持費に初年度の項目別計上設定を追加。
 // 旧バージョンの保存データとは構造が異なるためキーを分けて無視する。
-const STORAGE_KEY = "lifeplan-app:input:v9"
+const STORAGE_KEY = "lifeplan-app:input:v10"
 
 export function loadLifePlanInput(): LifePlanInput | null {
   if (typeof window === "undefined") return null

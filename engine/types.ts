@@ -116,6 +116,8 @@ export interface MortgageConfig {
   monthlyManagementFee: number // 管理費(初年度の月額, 万円)
   monthlyRepairReserve: number // 修繕積立金(初年度の月額, 万円)
   maintenanceIncreaseRate: number // 管理費・修繕積立金の年間上昇率(複利, %)
+  includeFirstYearManagementFee: boolean // false の場合、経過1年目の管理費は0になる
+  includeFirstYearRepairReserve: boolean // false の場合、経過1年目の修繕積立金は0になる
   // maintenanceMode === "stepped" のとき使う
   managementFeeStages: MaintenanceStage[]
   repairReserveStages: MaintenanceStage[]
@@ -123,6 +125,7 @@ export interface MortgageConfig {
   fireInsurance: number // 火災保険(万円/更新)
   earthquakeInsurance: number // 地震保険(万円/更新)
   insuranceRenewalYears: number // 保険更新頻度(年)
+  includeFirstYearInsurance: boolean // false の場合、経過1年目の保険(火災+地震)は0になる
 }
 
 /** 住宅ローンの年次内訳(通常返済分とボーナス返済分を分けて保持する)。 */

@@ -95,6 +95,8 @@ export const defaultInput: LifePlanInput = {
     monthlyManagementFee: 1.9,
     monthlyRepairReserve: 1.1,
     maintenanceIncreaseRate: 1.5,
+    includeFirstYearManagementFee: true,
+    includeFirstYearRepairReserve: true,
     managementFeeStages: [
       { id: "mf-1", label: "管理費", monthly: 1.9, untilYear: 48 },
     ],
@@ -107,6 +109,7 @@ export const defaultInput: LifePlanInput = {
     fireInsurance: 3.5,
     earthquakeInsurance: 9.2,
     insuranceRenewalYears: 5,
+    includeFirstYearInsurance: true,
   },
   rent: {
     monthlyRent: 15, // 月額賃料15万円

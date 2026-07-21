@@ -128,6 +128,45 @@ describe("calcMortgagePlan", () => {
     expect(plan[5].insurance).toBeCloseTo(3.5 + 9.2, 6)
   })
 
+  it("can exclude only the first-year management fee", () => {
+    const excluded = calcMortgagePlan(
+      { ...config, includeFirstYearManagementFee: false },
+      2027,
+      config.termYears,
+    )
+    expect(excluded[0].managementFee).toBe(0)
+    expect(excluded[1].managementFee).toBe(plan[1].managementFee)
+  })
+
+  it("can exclude only the first-year repair reserve", () => {
+    const excluded = calcMortgagePlan(
+      { ...config, includeFirstYearRepairReserve: false },
+      2027,
+      config.termYears,
+    )
+    expect(excluded[0].repairReserve).toBe(0)
+    expect(excluded[1].repairReserve).toBe(plan[1].repairReserve)
+  })
+
+  it("can exclude only the first-year insurance", () => {
+    const excluded = calcMortgagePlan(
+      { ...config, includeFirstYearInsurance: false },
+      2027,
+      config.termYears,
+    )
+    expect(excluded[0].insurance).toBe(0)
+    expect(excluded[5].insurance).toBeCloseTo(config.fireInsurance + config.earthquakeInsurance, 6)
+  })
+
+  it("can exclude the first-year management fee in compound mode", () => {
+    const compound = calcMortgagePlan(
+      { ...config, maintenanceMode: "compound", includeFirstYearManagementFee: false },
+      2027,
+      2,
+    )
+    expect(compound[0].managementFee).toBe(0)
+  })
+
   it("uses the stepped maintenance schedule from the reference sheet by default", () => {
     // 管理費は据え置き 22.8万円/年、修繕積立金は 13.2 → 19.2 → 31.2 と段階的に上がる
     const expected: [number, number][] = [

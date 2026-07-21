@@ -93,22 +93,26 @@ function maintenanceAt(
   const renewalYears = config.insuranceRenewalYears
   // 更新年(1年目、以降は更新頻度ごと)に、次の更新までの保険料をまとめて支払う
   const isRenewalYear = renewalYears > 0 && (elapsedYear - 1) % renewalYears === 0
-  const insurance = isRenewalYear ? config.fireInsurance + config.earthquakeInsurance : 0
+  let insurance = isRenewalYear ? config.fireInsurance + config.earthquakeInsurance : 0
+  let managementFee: number
+  let repairReserve: number
 
   if (config.maintenanceMode === "stepped") {
-    return {
-      managementFee: stagedMonthlyAt(config.managementFeeStages, elapsedYear) * 12,
-      repairReserve: stagedMonthlyAt(config.repairReserveStages, elapsedYear) * 12,
-      insurance,
-    }
+    managementFee = stagedMonthlyAt(config.managementFeeStages, elapsedYear) * 12
+    repairReserve = stagedMonthlyAt(config.repairReserveStages, elapsedYear) * 12
+  } else {
+    const growth = (1 + config.maintenanceIncreaseRate / 100) ** (elapsedYear - 1)
+    managementFee = config.monthlyManagementFee * 12 * growth
+    repairReserve = config.monthlyRepairReserve * 12 * growth
   }
 
-  const growth = (1 + config.maintenanceIncreaseRate / 100) ** (elapsedYear - 1)
-  return {
-    managementFee: config.monthlyManagementFee * 12 * growth,
-    repairReserve: config.monthlyRepairReserve * 12 * growth,
-    insurance,
+  if (elapsedYear === 1) {
+    if (!config.includeFirstYearManagementFee) managementFee = 0
+    if (!config.includeFirstYearRepairReserve) repairReserve = 0
+    if (!config.includeFirstYearInsurance) insurance = 0
   }
+
+  return { managementFee, repairReserve, insurance }
 }
 
 /**
