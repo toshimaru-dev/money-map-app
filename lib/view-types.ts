@@ -4,6 +4,7 @@ export type ViewKey =
   | "plan"
   | "cashflow"
   | "assets"
+  | "mortgage"
   | "goals"
   | "report"
   | "simulation"

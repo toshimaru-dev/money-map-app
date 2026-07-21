@@ -1,8 +1,8 @@
 import type { LifePlanInput } from "../engine/types"
 
-// v6: 基礎生活費/固有支出をテーブル(項目・ローン)化、その他収入に期間を追加。
+// v9: 将来プラン(不定期支出)を廃止し、ライフイベントに統合。
 // 旧バージョンの保存データとは構造が異なるためキーを分けて無視する。
-const STORAGE_KEY = "lifeplan-app:input:v6"
+const STORAGE_KEY = "lifeplan-app:input:v9"
 
 export function loadLifePlanInput(): LifePlanInput | null {
   if (typeof window === "undefined") return null

@@ -4,10 +4,12 @@ import { useState } from "react"
 
 import { Card } from "@heroui/react"
 
+import { stagedMonthlyAt } from "../../engine/mortgage"
 import type {
   ChildRearingStage,
   LifePlanInput,
   LivingExpenseItem,
+  MaintenanceStage,
   PersonSpecificExpense,
   RaisePhase,
   SpecificExpenseItem,
@@ -20,30 +22,65 @@ import { CellNumber, CellText, LabeledNumber, LabeledText } from "./fields"
 
 type Setter = (input: LifePlanInput) => void
 
-type InputTab = "basic" | "income" | "expense" | "events"
+type InputTab = "basic" | "income" | "expense" | "housing" | "events"
 
 const TABS: { key: InputTab; label: string }[] = [
   { key: "basic", label: "基本設定" },
   { key: "income", label: "収入" },
   { key: "expense", label: "支出" },
+  { key: "housing", label: "住宅ローン" },
   { key: "events", label: "ライフイベント" },
 ]
+
+/** カード内の合計。数値を1つの見出しとして目立たせる。 */
+interface CardTotal {
+  label: string
+  value: number
+  unit: string
+  digits?: number
+}
+
+function TotalBadge({ label, value, unit, digits = 1 }: CardTotal) {
+  return (
+    <span className="flex items-baseline gap-2 rounded-full bg-mm-soft-orange px-4 py-1.5">
+      <span className="text-xs font-medium text-mm-ink-secondary">{label}</span>
+      <span className="font-[family-name:var(--font-number)] text-base font-bold text-mm-ink">
+        {value.toLocaleString("ja-JP", {
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits,
+        })}
+      </span>
+      <span className="text-xs text-mm-ink-secondary">{unit}</span>
+    </span>
+  )
+}
 
 function PersonCard({
   title,
   accent,
+  totals,
   children,
 }: {
   title: string
   accent: string
+  totals?: CardTotal[]
   children: React.ReactNode
 }) {
   return (
     <Card>
       <Card.Header>
-        <Card.Title>
-          <span className={accent}>{title}</span>
-        </Card.Title>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <Card.Title>
+            <span className={accent}>{title}</span>
+          </Card.Title>
+          {totals && totals.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {totals.map((total) => (
+                <TotalBadge key={total.label} {...total} />
+              ))}
+            </div>
+          )}
+        </div>
       </Card.Header>
       <Card.Content>{children}</Card.Content>
     </Card>
@@ -271,8 +308,25 @@ function ChildRearingCard({
   const title = isAllowance ? "子ども（子育て関連手当）" : "子ども（子育て関連費用）"
   const valueLabel = isAllowance ? "手当 (万円/年)" : "費用 (万円/年)"
 
+  // 各ステージの年額 × その年数を積み上げた、子育て期間トータルの金額
+  const lifetimeTotal = stages.reduce((sum, stage) => {
+    const years = Math.max(0, stage.toChildAge - stage.fromChildAge + 1)
+    return sum + (isAllowance ? stage.annualAllowance : stage.annualCost) * years
+  }, 0)
+
   return (
-    <PersonCard title={title} accent="text-brand-green">
+    <PersonCard
+      title={title}
+      accent="text-brand-green"
+      totals={[
+        {
+          label: isAllowance ? "手当 全期間合計" : "費用 全期間合計",
+          value: lifetimeTotal,
+          unit: "万円",
+          digits: 0,
+        },
+      ]}
+    >
       <div className="flex flex-col gap-3">
         <p className="text-xs text-mm-ink-caption">子どもの年齢の範囲ごとに設定します。</p>
         {stages.map((stage) => (
@@ -389,9 +443,16 @@ function SpecificExpenseCard({
     value.items.reduce((s, it) => s + it.monthly, 0) + value.loans.reduce((s, l) => s + l.monthly, 0)
 
   return (
-    <PersonCard title={title} accent={accent}>
+    <PersonCard
+      title={title}
+      accent={accent}
+      totals={[
+        { label: "月額合計", value: monthlyTotal, unit: "万円" },
+        { label: "年額", value: monthlyTotal * 12, unit: "万円" },
+      ]}
+    >
       <p className="mb-3 text-xs text-mm-ink-caption">
-        娯楽費・保険などの通常項目とローン(奨学金など)を入力します。（現在の月額合計: {monthlyTotal.toFixed(1)}万円）
+        娯楽費・保険などの通常項目とローン(奨学金など)を入力します。
       </p>
 
       <div className="flex flex-col gap-4">
@@ -482,7 +543,14 @@ function LivingExpenseCard({ input, setInput }: { input: LifePlanInput; setInput
   const wifeTotal = lv.items.reduce((s, it) => s + it.wifeMonthly, 0)
 
   return (
-    <PersonCard title="基礎生活費" accent="text-mm-ink">
+    <PersonCard
+      title="基礎生活費"
+      accent="text-mm-ink"
+      totals={[
+        { label: "月額合計", value: husbandTotal + wifeTotal, unit: "万円" },
+        { label: "年額", value: (husbandTotal + wifeTotal) * 12, unit: "万円" },
+      ]}
+    >
       <table className="w-full max-w-2xl border-collapse">
         <thead>
           <tr className="border-b border-mm-sand">
@@ -531,17 +599,224 @@ function LivingExpenseCard({ input, setInput }: { input: LifePlanInput; setInput
   )
 }
 
-function MortgageCard({ input, setInput }: { input: LifePlanInput; setInput: Setter }) {
+/* ============================== 住宅ローン ============================== */
+function MortgageLoanCard({ input, setInput }: { input: LifePlanInput; setInput: Setter }) {
   const mg = input.mortgage
   const set = (patch: Partial<LifePlanInput["mortgage"]>) =>
     setInput({ ...input, mortgage: { ...mg, ...patch } })
+
+  const financed = Math.max(0, mg.principal - mg.downPayment)
+  const regularPrincipal = Math.max(0, financed - mg.bonusPrincipal)
+
   return (
-    <PersonCard title="住宅ローン" accent="text-mm-ink">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <PersonCard
+      title="借入条件"
+      accent="text-mm-ink"
+      totals={[
+        { label: "借入総額", value: financed, unit: "万円", digits: 0 },
+        { label: "うち通常返済分", value: regularPrincipal, unit: "万円", digits: 0 },
+      ]}
+    >
+      <p className="mb-3 text-xs text-mm-ink-caption">
+        借入金額から頭金を引いた額を、ボーナス返済に充当する元金とそれ以外に分けて別々に返済計画を組みます。
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <LabeledNumber label="借入金額 (万円)" value={mg.principal} onChange={(v) => set({ principal: v })} integer />
-        <LabeledNumber label="金利 (%)" value={mg.interestRate} onChange={(v) => set({ interestRate: v })} />
+        <LabeledNumber label="頭金 (万円)" value={mg.downPayment} onChange={(v) => set({ downPayment: v })} integer />
+        <LabeledNumber label="開始金利 (年率%)" value={mg.initialInterestRate} onChange={(v) => set({ initialInterestRate: v })} />
         <LabeledNumber label="返済期間 (年)" value={mg.termYears} onChange={(v) => set({ termYears: v })} />
-        <LabeledNumber label="管理費・修繕積立金 (万円/年)" value={mg.annualManagementFee} onChange={(v) => set({ annualManagementFee: v })} />
+        <LabeledNumber label="ボーナス返済に充当する元金 (万円)" value={mg.bonusPrincipal} onChange={(v) => set({ bonusPrincipal: v })} integer />
+      </div>
+    </PersonCard>
+  )
+}
+
+function MortgageRateCard({ input, setInput }: { input: LifePlanInput; setInput: Setter }) {
+  const mg = input.mortgage
+  const set = (patch: Partial<LifePlanInput["mortgage"]>) =>
+    setInput({ ...input, mortgage: { ...mg, ...patch } })
+
+  // 上限に到達するまでに必要な見直し回数から、頭打ちになる年を求める
+  const stepsToCap =
+    mg.rateStepUp > 0 ? Math.ceil((mg.maxInterestRate - mg.initialInterestRate) / mg.rateStepUp) : 0
+  const capYear = stepsToCap * mg.rateReviewIntervalYears + 1
+
+  return (
+    <PersonCard
+      title="変動金利（物価上昇連動）の前提"
+      accent="text-mm-ink"
+      totals={[{ label: "上限到達", value: capYear, unit: "年目", digits: 0 }]}
+    >
+      <p className="mb-3 text-xs text-mm-ink-caption">
+        見直し間隔ごとに金利を引き上げ、上限に達したらそれ以降は上限を維持します。
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <LabeledNumber label="金利の上限 (年率%)" value={mg.maxInterestRate} onChange={(v) => set({ maxInterestRate: v })} />
+        <LabeledNumber label="金利見直し間隔 (年)" value={mg.rateReviewIntervalYears} onChange={(v) => set({ rateReviewIntervalYears: v })} />
+        <LabeledNumber label="1回あたりの上昇幅 (年率%)" value={mg.rateStepUp} onChange={(v) => set({ rateStepUp: v })} />
+      </div>
+    </PersonCard>
+  )
+}
+
+/** 段階的な維持費(管理費 or 修繕積立金)の編集。 */
+function MaintenanceStageList({
+  title,
+  description,
+  stages,
+  onChange,
+}: {
+  title: string
+  description: string
+  stages: MaintenanceStage[]
+  onChange: (stages: MaintenanceStage[]) => void
+}) {
+  const update = (id: string, patch: Partial<MaintenanceStage>) =>
+    onChange(stages.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+  const remove = (id: string) => onChange(stages.filter((s) => s.id !== id))
+  const add = () => {
+    const lastUntil = stages.reduce((max, s) => Math.max(max, s.untilYear), 0)
+    const lastMonthly = stages.length > 0 ? stages[stages.length - 1].monthly : 0
+    onChange([
+      ...stages,
+      {
+        id: crypto.randomUUID(),
+        label: `第${stages.length}回見直し後`,
+        monthly: lastMonthly,
+        untilYear: lastUntil + 10,
+      },
+    ])
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <h3 className="text-sm font-semibold text-mm-ink">{title}</h3>
+        <p className="mt-0.5 text-xs text-mm-ink-caption">{description}</p>
+      </div>
+      {stages.length === 0 && (
+        <p className="rounded-2xl bg-mm-soft-orange px-4 py-3 text-sm text-mm-ink-secondary">
+          段階がありません。「段階を追加」から金額と期間を設定できます。
+        </p>
+      )}
+      {stages.map((stage) => (
+        <div
+          key={stage.id}
+          className="grid grid-cols-1 items-end gap-3 rounded-2xl border border-mm-sand p-3 sm:grid-cols-[1fr_140px_160px_auto]"
+        >
+          <LabeledText label="段階名" value={stage.label} onChange={(v) => update(stage.id, { label: v })} />
+          <LabeledNumber label="月額 (万円)" value={stage.monthly} onChange={(v) => update(stage.id, { monthly: v })} />
+          <LabeledNumber label="適用終了 (経過年数)" value={stage.untilYear} onChange={(v) => update(stage.id, { untilYear: v })} />
+          <button
+            type="button"
+            onClick={() => remove(stage.id)}
+            className="h-10 rounded-2xl px-3 text-sm font-medium text-brand-coral transition-colors hover:bg-brand-coral/10 md:h-9"
+          >
+            削除
+          </button>
+        </div>
+      ))}
+      <AddRowButton onClick={add} label="段階を追加" />
+    </div>
+  )
+}
+
+function MortgageMaintenanceCard({ input, setInput }: { input: LifePlanInput; setInput: Setter }) {
+  const mg = input.mortgage
+  const set = (patch: Partial<LifePlanInput["mortgage"]>) =>
+    setInput({ ...input, mortgage: { ...mg, ...patch } })
+
+  const isStepped = mg.maintenanceMode === "stepped"
+  // 初年度(経過年数1年目)の月額。方式によって参照するデータが変わる
+  const monthlyBase = isStepped
+    ? stagedMonthlyAt(mg.managementFeeStages, 1) + stagedMonthlyAt(mg.repairReserveStages, 1)
+    : mg.monthlyManagementFee + mg.monthlyRepairReserve
+  const insurancePerRenewal = mg.fireInsurance + mg.earthquakeInsurance
+  const insuranceMonthly =
+    mg.insuranceRenewalYears > 0 ? insurancePerRenewal / (mg.insuranceRenewalYears * 12) : 0
+
+  return (
+    <PersonCard
+      title="維持費・保険"
+      accent="text-mm-ink"
+      totals={[
+        { label: "初年度の月額合計", value: monthlyBase + insuranceMonthly, unit: "万円", digits: 2 },
+        { label: "初年度の年額", value: (monthlyBase + insuranceMonthly) * 12, unit: "万円" },
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div>
+          <div className="mb-2 flex flex-wrap items-center gap-3">
+            <h3 className="text-sm font-semibold text-mm-ink">管理費・修繕積立金</h3>
+            <div className="flex rounded-full bg-mm-soft-orange p-0.5 text-xs font-medium">
+              {(
+                [
+                  ["compound", "複利上昇"],
+                  ["stepped", "段階的"],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={mg.maintenanceMode === key}
+                  onClick={() => set({ maintenanceMode: key })}
+                  className={`rounded-full px-3 py-1 transition-colors ${
+                    mg.maintenanceMode === key
+                      ? "bg-white text-mm-ink shadow-mm-soft"
+                      : "text-mm-ink-secondary hover:text-mm-ink"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {isStepped ? (
+            <div className="flex flex-col gap-5">
+              <p className="text-xs text-mm-ink-caption">
+                長期修繕計画のような段階的な値上げを、金額と適用期間で入力します。最後の段階を過ぎると、その月額を維持します。
+              </p>
+              <MaintenanceStageList
+                title="管理費"
+                description="経過年数の区切りごとの月額です。値上げがなければ1段階だけで構いません。"
+                stages={mg.managementFeeStages}
+                onChange={(managementFeeStages) => set({ managementFeeStages })}
+              />
+              <MaintenanceStageList
+                title="修繕積立金"
+                description="長期修繕計画の見直しに合わせて段階を追加します。"
+                stages={mg.repairReserveStages}
+                onChange={(repairReserveStages) => set({ repairReserveStages })}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-mm-ink-caption">
+                初年度の月額から、毎年一定率で複利上昇します。
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <LabeledNumber label="管理費 (月額 万円)" value={mg.monthlyManagementFee} onChange={(v) => set({ monthlyManagementFee: v })} />
+                <LabeledNumber label="修繕積立金 (月額 万円)" value={mg.monthlyRepairReserve} onChange={(v) => set({ monthlyRepairReserve: v })} />
+                <LabeledNumber label="年間上昇率 (複利 %)" value={mg.maintenanceIncreaseRate} onChange={(v) => set({ maintenanceIncreaseRate: v })} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-mm-ink">保険</h3>
+          <p className="mb-3 text-xs text-mm-ink-caption">更新のたびに一括で支払う前提です。</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <LabeledNumber label="火災保険 (万円/更新)" value={mg.fireInsurance} onChange={(v) => set({ fireInsurance: v })} />
+            <LabeledNumber label="地震保険 (万円/更新)" value={mg.earthquakeInsurance} onChange={(v) => set({ earthquakeInsurance: v })} />
+            <LabeledNumber label="保険更新頻度 (年)" value={mg.insuranceRenewalYears} onChange={(v) => set({ insuranceRenewalYears: v })} />
+          </div>
+          <p className="mt-3 text-xs text-mm-ink-caption">
+            保険料の月額平均: {insuranceMonthly.toFixed(2)}万円（{insurancePerRenewal.toFixed(1)}万円 ÷{" "}
+            {mg.insuranceRenewalYears}年）
+          </p>
+        </div>
       </div>
     </PersonCard>
   )
@@ -552,7 +827,13 @@ function RentCard({ input, setInput }: { input: LifePlanInput; setInput: Setter 
   const set = (patch: Partial<LifePlanInput["rent"]>) =>
     setInput({ ...input, rent: { ...rent, ...patch } })
   return (
-    <PersonCard title="住宅賃料" accent="text-mm-ink">
+    <PersonCard
+      title="住宅賃料"
+      accent="text-mm-ink"
+      totals={[
+        { label: "年額（更新料を除く）", value: rent.monthlyRent * 12, unit: "万円" },
+      ]}
+    >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <LabeledNumber label="月額賃料 (万円)" value={rent.monthlyRent} onChange={(v) => set({ monthlyRent: v })} />
         <LabeledNumber label="更新料 (万円)" value={rent.renewalFee} onChange={(v) => set({ renewalFee: v })} />
@@ -571,7 +852,23 @@ function InvestmentCard({ input, setInput }: { input: LifePlanInput; setInput: S
   const setLong = (patch: Partial<LifePlanInput["investment"]["longTerm"]>) =>
     setInput({ ...input, investment: { ...input.investment, longTerm: { ...long, ...patch } } })
   return (
-    <PersonCard title="金融商品積立" accent="text-mm-ink">
+    <PersonCard
+      title="金融商品積立"
+      accent="text-mm-ink"
+      totals={[
+        {
+          label: "年間積立合計",
+          value: mid.annualContribution + long.annualContribution,
+          unit: "万円",
+        },
+        {
+          label: "現在残高合計",
+          value: mid.initialBalance + long.initialBalance,
+          unit: "万円",
+          digits: 0,
+        },
+      ]}
+    >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <LabeledNumber label="中期: 現在残高 (万円)" value={mid.initialBalance} onChange={(v) => setMid({ initialBalance: v })} integer />
         <LabeledNumber label="中期: 年間積立額 (万円)" value={mid.annualContribution} onChange={(v) => setMid({ annualContribution: v })} />
@@ -579,21 +876,6 @@ function InvestmentCard({ input, setInput }: { input: LifePlanInput; setInput: S
         <LabeledNumber label="長期: 現在残高 (万円)" value={long.initialBalance} onChange={(v) => setLong({ initialBalance: v })} integer />
         <LabeledNumber label="長期: 年間積立額 (万円)" value={long.annualContribution} onChange={(v) => setLong({ annualContribution: v })} />
         <LabeledNumber label="長期: 利回り (%/年)" value={long.annualReturnRate} onChange={(v) => setLong({ annualReturnRate: v })} />
-      </div>
-    </PersonCard>
-  )
-}
-
-function FuturePlanCard({ input, setInput }: { input: LifePlanInput; setInput: Setter }) {
-  const set = (patch: Partial<LifePlanInput["futurePlan"]>) =>
-    setInput({ ...input, futurePlan: { ...input.futurePlan, ...patch } })
-  return (
-    <PersonCard title="将来プラン（不定期支出）" accent="text-mm-ink">
-      <p className="mb-3 text-xs text-mm-ink-caption">
-        旅行・車の買い替えなどの年間目安です。大きな単発の出費は「ライフイベント」で登録します。
-      </p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <LabeledNumber label="将来プラン (万円/年)" value={input.futurePlan.annualAmount} onChange={(v) => set({ annualAmount: v })} />
       </div>
     </PersonCard>
   )
@@ -741,11 +1023,6 @@ export function DataInputPage({ input, setInput }: { input: LifePlanInput; setIn
       {activeTab === "expense" && (
         <div className="grid grid-cols-1 gap-5">
           <LivingExpenseCard input={input} setInput={setInput} />
-          {input.basic.housingType === "rent" ? (
-            <RentCard input={input} setInput={setInput} />
-          ) : (
-            <MortgageCard input={input} setInput={setInput} />
-          )}
           <SpecificExpenseCard
             title="夫（固有の支出）"
             accent="text-brand-blue"
@@ -760,8 +1037,26 @@ export function DataInputPage({ input, setInput }: { input: LifePlanInput; setIn
           />
           <ChildRearingCard input={input} setInput={setInput} mode="cost" />
           <InvestmentCard input={input} setInput={setInput} />
-          <FuturePlanCard input={input} setInput={setInput} />
           <TaxCard input={input} setInput={setInput} />
+        </div>
+      )}
+
+      {activeTab === "housing" && (
+        <div className="grid grid-cols-1 gap-5">
+          {input.basic.housingType === "rent" ? (
+            <>
+              <p className="rounded-2xl bg-mm-soft-orange px-4 py-3 text-sm text-mm-ink-secondary">
+                現在は「賃貸」で試算しています。住宅ローンの設定を使うには、「基本設定」で住まいを「住宅ローン」に切り替えてください。
+              </p>
+              <RentCard input={input} setInput={setInput} />
+            </>
+          ) : (
+            <>
+              <MortgageLoanCard input={input} setInput={setInput} />
+              <MortgageRateCard input={input} setInput={setInput} />
+              <MortgageMaintenanceCard input={input} setInput={setInput} />
+            </>
+          )}
         </div>
       )}
 

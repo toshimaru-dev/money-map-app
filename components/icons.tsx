@@ -34,6 +34,17 @@ export function HomeIcon(props: IconProps) {
   )
 }
 
+export function HouseLoanIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M3 10.5 12 3.5l9 7" />
+      <path d="M5.5 9.5V20h13V9.5" />
+      <circle cx="12" cy="13.5" r="2" />
+      <path d="M12 15.5V19M12 17.5h1.8" />
+    </svg>
+  )
+}
+
 export function RouteIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

@@ -18,7 +18,7 @@ const GROUP_CONFIG: Record<
   },
   expense: {
     title: "支出イベント",
-    hint: "住宅購入・教育費・車の買い替えなど、まとまった支出を追加します。",
+    hint: "住宅購入・教育費・車の買い替え・旅行など、将来の不定期な支出を追加します。",
     defaultName: "新しい支出イベント",
     amountLabel: "支出額 (万円)",
     accent: "text-brand-coral",
