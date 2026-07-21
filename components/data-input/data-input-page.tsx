@@ -728,20 +728,29 @@ function MortgageMaintenanceCard({ input, setInput }: { input: LifePlanInput; se
 
   const isStepped = mg.maintenanceMode === "stepped"
   // 初年度(経過年数1年目)の月額。方式によって参照するデータが変わる
-  const monthlyBase = isStepped
-    ? stagedMonthlyAt(mg.managementFeeStages, 1) + stagedMonthlyAt(mg.repairReserveStages, 1)
-    : mg.monthlyManagementFee + mg.monthlyRepairReserve
+  const firstYearManagementFee = mg.includeFirstYearManagementFee
+    ? isStepped
+      ? stagedMonthlyAt(mg.managementFeeStages, 1)
+      : mg.monthlyManagementFee
+    : 0
+  const firstYearRepairReserve = mg.includeFirstYearRepairReserve
+    ? isStepped
+      ? stagedMonthlyAt(mg.repairReserveStages, 1)
+      : mg.monthlyRepairReserve
+    : 0
+  const monthlyBase = firstYearManagementFee + firstYearRepairReserve
   const insurancePerRenewal = mg.fireInsurance + mg.earthquakeInsurance
   const insuranceMonthly =
     mg.insuranceRenewalYears > 0 ? insurancePerRenewal / (mg.insuranceRenewalYears * 12) : 0
+  const firstYearInsuranceMonthly = mg.includeFirstYearInsurance ? insuranceMonthly : 0
 
   return (
     <PersonCard
       title="維持費・保険"
       accent="text-mm-ink"
       totals={[
-        { label: "初年度の月額合計", value: monthlyBase + insuranceMonthly, unit: "万円", digits: 2 },
-        { label: "初年度の年額", value: (monthlyBase + insuranceMonthly) * 12, unit: "万円" },
+        { label: "初年度の月額合計", value: monthlyBase + firstYearInsuranceMonthly, unit: "万円", digits: 2 },
+        { label: "初年度の年額", value: (monthlyBase + firstYearInsuranceMonthly) * 12, unit: "万円" },
       ]}
     >
       <div className="flex flex-col gap-5">
@@ -770,6 +779,19 @@ function MortgageMaintenanceCard({ input, setInput }: { input: LifePlanInput; se
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FirstYearInclusionToggle
+              label="管理費"
+              included={mg.includeFirstYearManagementFee}
+              onChange={(includeFirstYearManagementFee) => set({ includeFirstYearManagementFee })}
+            />
+            <FirstYearInclusionToggle
+              label="修繕積立金"
+              included={mg.includeFirstYearRepairReserve}
+              onChange={(includeFirstYearRepairReserve) => set({ includeFirstYearRepairReserve })}
+            />
           </div>
 
           {isStepped ? (
@@ -807,6 +829,13 @@ function MortgageMaintenanceCard({ input, setInput }: { input: LifePlanInput; se
         <div>
           <h3 className="mb-2 text-sm font-semibold text-mm-ink">保険</h3>
           <p className="mb-3 text-xs text-mm-ink-caption">更新のたびに一括で支払う前提です。</p>
+          <div className="mb-4 max-w-md">
+            <FirstYearInclusionToggle
+              label="火災保険・地震保険"
+              included={mg.includeFirstYearInsurance}
+              onChange={(includeFirstYearInsurance) => set({ includeFirstYearInsurance })}
+            />
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <LabeledNumber label="火災保険 (万円/更新)" value={mg.fireInsurance} onChange={(v) => set({ fireInsurance: v })} />
             <LabeledNumber label="地震保険 (万円/更新)" value={mg.earthquakeInsurance} onChange={(v) => set({ earthquakeInsurance: v })} />
@@ -819,6 +848,45 @@ function MortgageMaintenanceCard({ input, setInput }: { input: LifePlanInput; se
         </div>
       </div>
     </PersonCard>
+  )
+}
+
+function FirstYearInclusionToggle({
+  label,
+  included,
+  onChange,
+}: {
+  label: string
+  included: boolean
+  onChange: (included: boolean) => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-mm-sand px-3 py-2">
+      <span className="text-xs font-medium text-mm-ink">{label}: 初年度に含める</span>
+      <div className="flex rounded-full bg-mm-soft-orange p-0.5 text-xs font-medium">
+        {(
+          [
+            [true, "含める"],
+            [false, "含めない"],
+          ] as const
+        ).map(([key, text]) => (
+          <button
+            key={String(key)}
+            type="button"
+            aria-label={`${label}を初年度に${text}`}
+            aria-pressed={included === key}
+            onClick={() => onChange(key)}
+            className={`rounded-full px-3 py-1 transition-colors ${
+              included === key
+                ? "bg-white text-mm-ink shadow-mm-soft"
+                : "text-mm-ink-secondary hover:text-mm-ink"
+            }`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
