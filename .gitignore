@@ -42,3 +42,13 @@ next-env.d.ts
 
 # claude code session state
 .claude/scheduled_tasks.lock
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+
+!.env.example
