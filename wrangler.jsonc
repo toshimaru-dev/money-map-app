@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "money-map-app",
+  "compatibility_date": "2026-07-21",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // 自己参照サービスバインディング。service 名は上の name と一致させること。
+      // https://opennext.js.org/cloudflare/caching
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "money-map-app"
+    }
+  ],
+  "images": {
+    // Next/Image の最適化に使用（現状アプリは next/image 未使用だが有効化しておく）
+    // https://opennext.js.org/cloudflare/howtos/image
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // 注: このアプリは全ルートが静的（ISR/オンデマンド再検証なし）のため、
+  // インクリメンタルキャッシュ用の R2 バケットは設定していない。
+  // ISR を使い始める場合は open-next.config.ts に R2 キャッシュを追加し、
+  // ここに r2_buckets バインディングを足すこと。
+}
