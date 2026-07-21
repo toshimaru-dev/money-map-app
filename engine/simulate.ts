@@ -1,7 +1,7 @@
 import { childAgeAt, childRearingAt } from "./child"
 import { calcRaisePhaseSchedule } from "./income"
 import { calcLivingExpenseSchedule } from "./living-expense"
-import { calcMortgageSchedule } from "./mortgage"
+import { calcMortgagePlan } from "./mortgage"
 import { rentAt } from "./rent"
 import { specificExpenseAt } from "./specific-expense"
 import { personTax, socialInsuranceAmount } from "./tax"
@@ -28,7 +28,6 @@ export function simulate(input: LifePlanInput): YearlyResult[] {
     livingExpense,
     specificExpense,
     investment,
-    futurePlan,
     mortgage,
     rent,
     tax,
@@ -47,7 +46,7 @@ export function simulate(input: LifePlanInput): YearlyResult[] {
     { monthlyAmount: livingMonthly, annualInflationRate: livingExpense.annualInflationRate },
     simulationYears,
   )
-  const mortgageSchedule = calcMortgageSchedule(mortgage, simulationYears)
+  const mortgagePlan = calcMortgagePlan(mortgage, basic.startYear, simulationYears)
 
   const eventIncomeByYear = new Map<number, number>()
   const eventExpenseByYear = new Map<number, number>()
@@ -85,9 +84,10 @@ export function simulate(input: LifePlanInput): YearlyResult[] {
     // === 支出(住居) ===
     const livingExpenseAmount = livingExpenseSchedule[i]
     // 住宅ローン or 賃貸で住居費を切り替える
-    const mortgagePayment = isRenting ? 0 : mortgageSchedule.payment[i]
-    const mortgageBalance = isRenting ? 0 : mortgageSchedule.balance[i]
-    const managementFee = isRenting ? 0 : mortgage.annualManagementFee
+    const mortgagePayment = isRenting ? 0 : mortgagePlan[i].totalPayment
+    const mortgageBalance = isRenting ? 0 : mortgagePlan[i].totalBalance
+    // 管理費・修繕積立金・保険をまとめて住宅の維持費として計上する
+    const managementFee = isRenting ? 0 : mortgagePlan[i].maintenanceTotal
     const { annualRent, renewalFee: rentRenewalFee } = isRenting
       ? rentAt(rent, e)
       : { annualRent: 0, renewalFee: 0 }
@@ -97,7 +97,6 @@ export function simulate(input: LifePlanInput): YearlyResult[] {
     const wifeSpecificExpense = specificExpenseAt(specificExpense.wife, e)
     const midTermContribution = investment.midTerm.annualContribution
     const longTermContribution = investment.longTerm.annualContribution
-    const futurePlanAmount = futurePlan.annualAmount
 
     // 住宅ローン控除(参考): 適用期間内は 年末残高×控除率(対象上限あり)。賃貸・購入初年度は0。
     const withinDeduction = !isRenting && e >= 2 && e <= mortgageDeduction.years + 1
@@ -128,7 +127,6 @@ export function simulate(input: LifePlanInput): YearlyResult[] {
       wifeSpecificExpense +
       midTermContribution +
       longTermContribution +
-      futurePlanAmount +
       taxAmount +
       socialInsurance +
       eventExpense
@@ -169,7 +167,6 @@ export function simulate(input: LifePlanInput): YearlyResult[] {
       wifeSpecificExpense,
       midTermContribution,
       longTermContribution,
-      futurePlan: futurePlanAmount,
       mortgageDeduction: mortgageDeductionAmount,
       tax: taxAmount,
       socialInsurance,

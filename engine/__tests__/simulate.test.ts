@@ -51,7 +51,6 @@ describe("simulate", () => {
         r.wifeSpecificExpense +
         r.midTermContribution +
         r.longTermContribution +
-        r.futurePlan +
         r.tax +
         r.socialInsurance +
         r.eventExpense

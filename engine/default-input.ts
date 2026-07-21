@@ -80,14 +80,33 @@ export const defaultInput: LifePlanInput = {
     midTerm: { initialBalance: 0, annualContribution: 48, annualReturnRate: 6.0 },
     longTerm: { initialBalance: 0, annualContribution: 0, annualReturnRate: 3.0 },
   },
-  futurePlan: {
-    annualAmount: 30, // 旅行・車購入などの不定期支出の年間目安(大きな出費はライフイベントで別途)
-  },
   mortgage: {
     principal: 8050,
-    interestRate: 1.45,
+    downPayment: 0,
+    initialInterestRate: 1.45,
     termYears: 48,
-    annualManagementFee: 36, // 管理費1.9 + 修繕積立1.1 = 3万/月 × 12
+    bonusPrincipal: 1500, // 8050万のうち1500万をボーナス返済に充当(残り6550万が通常返済分)
+    // 変動金利(物価上昇連動): 5年ごとに+0.5%、4.0%で頭打ち
+    maxInterestRate: 4.0,
+    rateReviewIntervalYears: 5,
+    rateStepUp: 0.5,
+    // 参考データの長期修繕計画に合わせて、既定は段階的な値を使う
+    maintenanceMode: "stepped",
+    monthlyManagementFee: 1.9,
+    monthlyRepairReserve: 1.1,
+    maintenanceIncreaseRate: 1.5,
+    managementFeeStages: [
+      { id: "mf-1", label: "管理費", monthly: 1.9, untilYear: 48 },
+    ],
+    // 修繕積立金は 13.2 → 19.2 → 31.2 万円/年 (月額 1.1 → 1.6 → 2.6) と段階的に上がる
+    repairReserveStages: [
+      { id: "rr-1", label: "当初", monthly: 1.1, untilYear: 6 },
+      { id: "rr-2", label: "第1回見直し後", monthly: 1.6, untilYear: 14 },
+      { id: "rr-3", label: "第2回見直し後", monthly: 2.6, untilYear: 48 },
+    ],
+    fireInsurance: 3.5,
+    earthquakeInsurance: 9.2,
+    insuranceRenewalYears: 5,
   },
   rent: {
     monthlyRent: 15, // 月額賃料15万円

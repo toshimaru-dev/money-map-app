@@ -12,6 +12,7 @@ import { PencilIcon, RouteIcon } from "../components/icons"
 import { Sidebar } from "../components/layout/sidebar"
 import { LifePlanChart } from "../components/life-plan-chart"
 import { LifePlanTable } from "../components/life-plan-table"
+import { MortgagePage } from "../components/mortgage/mortgage-page"
 import type { DashboardMetrics } from "../lib/dashboard-metrics"
 import { simulate } from "../engine/simulate"
 import type { YearlyResult } from "../engine/types"
@@ -25,6 +26,7 @@ const VIEW_LABELS: Record<ViewKey, string> = {
   plan: "ライフプラン",
   cashflow: "キャッシュフロー",
   assets: "資産推移",
+  mortgage: "住宅ローン",
   goals: "目標",
   report: "レポート",
   simulation: "シミュレーション",
@@ -228,6 +230,8 @@ export default function Home() {
           {activeView === "assets" && (
             <AssetsView results={results} events={input.events} metrics={metrics} onOpenInput={openInput} />
           )}
+
+          {activeView === "mortgage" && <MortgagePage input={input} onOpenInput={openInput} />}
 
           {(activeView === "goals" ||
             activeView === "report" ||
