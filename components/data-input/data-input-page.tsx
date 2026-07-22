@@ -389,9 +389,10 @@ function RowDeleteButton({ onClick, label }: { onClick: () => void; label: strin
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium text-brand-coral transition-colors hover:bg-brand-coral/10"
+      className="flex min-h-[44px] w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-medium text-brand-coral transition-colors hover:bg-brand-coral/10 sm:h-9 sm:min-h-0 sm:w-9 sm:rounded-full sm:px-0 sm:py-0"
     >
-      ×
+      <span className="sm:hidden">削除</span>
+      <span className="hidden sm:inline">×</span>
     </button>
   )
 }
@@ -401,15 +402,13 @@ function AddRowButton({ onClick, label }: { onClick: () => void; label: string }
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-center gap-1.5 rounded-2xl border border-dashed border-mm-sand px-4 py-2 text-sm font-medium text-mm-ink-secondary transition-colors hover:border-brand-orange hover:text-brand-orange"
+      className="flex items-center justify-center gap-1.5 rounded-2xl border border-dashed border-mm-sand px-4 py-3 text-sm font-medium text-mm-ink-secondary transition-colors hover:border-brand-orange hover:text-brand-orange sm:py-2"
     >
       <PlusIcon className="h-4 w-4" />
       {label}
     </button>
   )
 }
-
-const TH_CLASS = "px-2 py-1.5 text-left text-xs font-semibold text-mm-ink-secondary"
 
 function SpecificExpenseCard({
   title,
@@ -458,30 +457,33 @@ function SpecificExpenseCard({
       <div className="flex flex-col gap-4">
         {/* 通常項目 */}
         <div>
-          <table className="w-full max-w-lg border-collapse">
-            <thead>
-              <tr className="border-b border-mm-sand">
-                <th className={TH_CLASS}>固有支出内訳</th>
-                <th className={`${TH_CLASS} w-32`}>支出(月額 万円)</th>
-                <th className="w-10" />
-              </tr>
-            </thead>
-            <tbody>
+          <div className="w-full max-w-lg">
+            <div className="hidden border-b border-mm-sand sm:grid sm:grid-cols-[1fr_8rem_2.5rem] sm:gap-2">
+              <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">固有支出内訳</div>
+              <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">支出(月額 万円)</div>
+              <div />
+            </div>
+            <div className="flex flex-col gap-3 sm:gap-0">
               {value.items.map((item) => (
-                <tr key={item.id} className="border-b border-mm-sand/60">
-                  <td className="px-2 py-1.5">
+                <div
+                  key={item.id}
+                  className="grid grid-cols-1 gap-2 rounded-2xl border border-mm-sand p-3 sm:grid-cols-[1fr_8rem_2.5rem] sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-mm-sand/60 sm:p-0"
+                >
+                  <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                    <span className="text-xs text-mm-ink-secondary sm:hidden">固有支出内訳</span>
                     <CellText ariaLabel="項目名" value={item.label} onChange={(v) => updateItem(item.id, { label: v })} />
-                  </td>
-                  <td className="px-2 py-1.5">
+                  </div>
+                  <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                    <span className="text-xs text-mm-ink-secondary sm:hidden">支出(月額 万円)</span>
                     <CellNumber ariaLabel="月額" value={item.monthly} onChange={(v) => updateItem(item.id, { monthly: v })} />
-                  </td>
-                  <td className="px-1 py-1.5">
+                  </div>
+                  <div className="sm:px-0.5 sm:py-1.5">
                     <RowDeleteButton onClick={() => removeItem(item.id)} label="項目を削除" />
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
           <div className="mt-2">
             <AddRowButton onClick={addItem} label="項目を追加" />
           </div>
@@ -490,34 +492,38 @@ function SpecificExpenseCard({
         {/* ローン */}
         <div>
           <h4 className="mb-1.5 text-sm font-semibold text-mm-ink">ローン</h4>
-          <table className="w-full max-w-2xl border-collapse">
-            <thead>
-              <tr className="border-b border-mm-sand">
-                <th className={TH_CLASS}>固有支出内訳</th>
-                <th className={`${TH_CLASS} w-32`}>支出(月額 万円)</th>
-                <th className={`${TH_CLASS} w-36`}>払い終わり(年後)</th>
-                <th className="w-10" />
-              </tr>
-            </thead>
-            <tbody>
+          <div className="w-full max-w-2xl">
+            <div className="hidden border-b border-mm-sand sm:grid sm:grid-cols-[1fr_8rem_9rem_2.5rem] sm:gap-2">
+              <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">固有支出内訳</div>
+              <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">支出(月額 万円)</div>
+              <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">払い終わり(年後)</div>
+              <div />
+            </div>
+            <div className="flex flex-col gap-3 sm:gap-0">
               {value.loans.map((loan) => (
-                <tr key={loan.id} className="border-b border-mm-sand/60">
-                  <td className="px-2 py-1.5">
+                <div
+                  key={loan.id}
+                  className="grid grid-cols-1 gap-2 rounded-2xl border border-mm-sand p-3 sm:grid-cols-[1fr_8rem_9rem_2.5rem] sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-mm-sand/60 sm:p-0"
+                >
+                  <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                    <span className="text-xs text-mm-ink-secondary sm:hidden">固有支出内訳</span>
                     <CellText ariaLabel="ローン名" value={loan.label} onChange={(v) => updateLoan(loan.id, { label: v })} />
-                  </td>
-                  <td className="px-2 py-1.5">
+                  </div>
+                  <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                    <span className="text-xs text-mm-ink-secondary sm:hidden">支出(月額 万円)</span>
                     <CellNumber ariaLabel="月額" value={loan.monthly} onChange={(v) => updateLoan(loan.id, { monthly: v })} />
-                  </td>
-                  <td className="px-2 py-1.5">
+                  </div>
+                  <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                    <span className="text-xs text-mm-ink-secondary sm:hidden">払い終わり(年後)</span>
                     <CellNumber ariaLabel="払い終わり" value={loan.payoffYear} onChange={(v) => updateLoan(loan.id, { payoffYear: v })} />
-                  </td>
-                  <td className="px-1 py-1.5">
+                  </div>
+                  <div className="sm:px-0.5 sm:py-1.5">
                     <RowDeleteButton onClick={() => removeLoan(loan.id)} label="ローンを削除" />
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
           <div className="mt-2">
             <AddRowButton onClick={addLoan} label="ローンを追加" />
           </div>
@@ -551,40 +557,50 @@ function LivingExpenseCard({ input, setInput }: { input: LifePlanInput; setInput
         { label: "年額", value: (husbandTotal + wifeTotal) * 12, unit: "万円" },
       ]}
     >
-      <table className="w-full max-w-2xl border-collapse">
-        <thead>
-          <tr className="border-b border-mm-sand">
-            <th className={TH_CLASS}>費目</th>
-            <th className={`${TH_CLASS} w-32`}>夫(月額 万円)</th>
-            <th className={`${TH_CLASS} w-32`}>妻(月額 万円)</th>
-            <th className="w-10" />
-          </tr>
-        </thead>
-        <tbody>
+      <div className="w-full max-w-2xl">
+        <div className="hidden border-b border-mm-sand sm:grid sm:grid-cols-[1fr_8rem_8rem_2.5rem] sm:gap-2">
+          <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">費目</div>
+          <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">夫(月額 万円)</div>
+          <div className="px-2 py-1.5 text-xs font-semibold text-mm-ink-secondary">妻(月額 万円)</div>
+          <div />
+        </div>
+        <div className="flex flex-col gap-3 sm:gap-0">
           {lv.items.map((item) => (
-            <tr key={item.id} className="border-b border-mm-sand/60">
-              <td className="px-2 py-1.5">
+            <div
+              key={item.id}
+              className="grid grid-cols-1 gap-2 rounded-2xl border border-mm-sand p-3 sm:grid-cols-[1fr_8rem_8rem_2.5rem] sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-mm-sand/60 sm:p-0"
+            >
+              <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                <span className="text-xs text-mm-ink-secondary sm:hidden">費目</span>
                 <CellText ariaLabel="費目名" value={item.label} onChange={(v) => updateItem(item.id, { label: v })} />
-              </td>
-              <td className="px-2 py-1.5">
+              </div>
+              <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                <span className="text-xs text-mm-ink-secondary sm:hidden">夫(月額 万円)</span>
                 <CellNumber ariaLabel="夫の月額" value={item.husbandMonthly} onChange={(v) => updateItem(item.id, { husbandMonthly: v })} />
-              </td>
-              <td className="px-2 py-1.5">
+              </div>
+              <div className="flex flex-col gap-1 sm:px-2 sm:py-1.5">
+                <span className="text-xs text-mm-ink-secondary sm:hidden">妻(月額 万円)</span>
                 <CellNumber ariaLabel="妻の月額" value={item.wifeMonthly} onChange={(v) => updateItem(item.id, { wifeMonthly: v })} />
-              </td>
-              <td className="px-1 py-1.5">
+              </div>
+              <div className="sm:px-0.5 sm:py-1.5">
                 <RowDeleteButton onClick={() => removeItem(item.id)} label="費目を削除" />
-              </td>
-            </tr>
+              </div>
+            </div>
           ))}
-          <tr className="font-semibold text-mm-ink">
-            <td className="px-2 py-1.5 text-sm">合計 (月額)</td>
-            <td className="px-2 py-1.5 text-sm font-[family-name:var(--font-number)]">{husbandTotal.toFixed(1)}</td>
-            <td className="px-2 py-1.5 text-sm font-[family-name:var(--font-number)]">{wifeTotal.toFixed(1)}</td>
-            <td />
-          </tr>
-        </tbody>
-      </table>
+          <div className="grid grid-cols-1 gap-1 rounded-2xl bg-mm-soft-orange p-3 font-semibold text-mm-ink sm:grid-cols-[1fr_8rem_8rem_2.5rem] sm:gap-2 sm:rounded-none sm:bg-transparent sm:p-0">
+            <div className="py-1 text-sm sm:px-2 sm:py-1.5">合計 (月額)</div>
+            <div className="flex items-center justify-between py-1 text-sm font-[family-name:var(--font-number)] sm:block sm:px-2 sm:py-1.5">
+              <span className="font-[family-name:var(--font-sans)] text-xs text-mm-ink-secondary sm:hidden">夫</span>
+              {husbandTotal.toFixed(1)}
+            </div>
+            <div className="flex items-center justify-between py-1 text-sm font-[family-name:var(--font-number)] sm:block sm:px-2 sm:py-1.5">
+              <span className="font-[family-name:var(--font-sans)] text-xs text-mm-ink-secondary sm:hidden">妻</span>
+              {wifeTotal.toFixed(1)}
+            </div>
+            <div />
+          </div>
+        </div>
+      </div>
       <div className="mt-2 flex flex-wrap items-end gap-4">
         <AddRowButton onClick={addItem} label="費目を追加" />
         <div className="w-48">
@@ -1067,7 +1083,7 @@ export function DataInputPage({ input, setInput }: { input: LifePlanInput; setIn
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveTab(tab.key)}
-              className={`rounded-full px-4 py-2 transition-colors ${
+              className={`rounded-full px-4 py-2.5 transition-colors sm:py-2 ${
                 isActive ? "bg-white text-mm-ink shadow-mm-soft" : "text-mm-ink-secondary hover:text-mm-ink"
               }`}
             >
