@@ -185,7 +185,7 @@ export default function Home() {
       </div>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <div className="flex items-center gap-2 border-b border-mm-sand bg-mm-warm-white px-4 py-3 lg:hidden">
+        <div className="flex items-center gap-2 border-b border-mm-sand bg-mm-warm-white px-4 py-2.5 lg:hidden">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-orange to-brand-amber text-white">
             <RouteIcon className="h-4 w-4" />
           </span>
@@ -193,7 +193,7 @@ export default function Home() {
           <select
             value={activeView}
             onChange={(event) => setActiveView(event.target.value as ViewKey)}
-            className="ml-auto rounded-xl border border-mm-sand bg-white px-2 py-1.5 text-sm text-mm-ink"
+            className="ml-auto rounded-xl border border-mm-sand bg-white px-2.5 py-2.5 text-sm text-mm-ink"
           >
             {Object.entries(VIEW_LABELS).map(([key, label]) => (
               <option key={key} value={key}>
